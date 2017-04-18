@@ -21,13 +21,12 @@ main =
 
 type alias Model =
   { word : String
-  , suggestions : List String
   , items : List String
   }
 
 init : (Model, Cmd Msg)
 init =
-  (Model "" [] [], Cmd.none)
+  (Model "" [], Cmd.none)
 
 
 
@@ -41,7 +40,6 @@ type alias Item =
 type Msg
   = Change String
   | Create
-  | Suggest (List String)
   | ShowItems (List Json.Decode.Value)
 
 
@@ -57,15 +55,13 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     ShowItems items ->
-      ( Model "" [] (List.map decodeItem items), Cmd.none)
+      ( {model | items = (List.map decodeItem items)}, Cmd.none)
+
     Change newWord ->
-      ( Model newWord [] [], Cmd.none )
+      ( {model | word = newWord }, Cmd.none )
 
     Create ->
-      ( Model model.word [] [], create model.word )
-
-    Suggest newSuggestions ->
-      ( Model model.word newSuggestions [], Cmd.none )
+      ( model, create model.word )
 
 
 -- SUBSCRIPTIONS
@@ -73,10 +69,7 @@ update msg model =
 port suggestions : (List String -> msg) -> Sub msg
 
 subscriptions : Model -> Sub Msg
-subscriptions model = Sub.batch [
-      suggestions Suggest
-    , items ShowItems
-  ]
+subscriptions model = Sub.batch [ items ShowItems ]
 
 port items : ( List Json.Decode.Value -> msg ) -> Sub msg
 
@@ -88,6 +81,5 @@ view model =
   div []
     [ input [ onInput Change ] []
     , button [ onClick Create ] [ text "Create" ]
-    , div [] [ text (String.join ", " model.suggestions) ]
-    , div [] [ text (toString model.items)]
+    , div [] [ text (String.join ", " model.items) ]
     ]
